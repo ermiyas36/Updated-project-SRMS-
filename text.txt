@@ -1,0 +1,8 @@
+Role	Email	Password
+Admin	admin@example.com	Admin123
+Teacher	teacher@example.com	Teacher123
+Student	student@example.com	Student123
+Registrar	registrar@example.com	Registrar123
+KT@example.com   
+
+run the project by : php artisan serve
