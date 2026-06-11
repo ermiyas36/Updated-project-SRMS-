@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\Grade;
 use App\Models\Enrollment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -29,12 +30,25 @@ class RegistrarController extends Controller
     // Show registration form
     public function registerStudent()
     {
-        return view('registrar.register-student');
+        if (!Auth::check() || Auth::user()->role !== 'registrar') {
+            abort(403, 'Unauthorized. Only registrar users can access student registration.');
+        }
+
+        $teachers = User::where('role', 'teacher')
+            ->orderBy('department')
+            ->orderBy('first_name')
+            ->get();
+
+        return view('registrar.register-student', compact('teachers'));
     }
 
     // Store new student
     public function storeStudent(Request $request)
     {
+        if (!Auth::check() || Auth::user()->role !== 'registrar') {
+            abort(403, 'Unauthorized. Only registrar users can register students.');
+        }
+
         $request->validate([
             'first_name' => 'required|string|max:255|regex:/^[a-zA-Z\s]+$/',
             'last_name' => 'required|string|max:255|regex:/^[a-zA-Z\s]+$/',
@@ -42,11 +56,20 @@ class RegistrarController extends Controller
             'password' => 'required|string|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/',
             'department' => 'required|string',
             'year' => 'required|integer|min:1|max:5',
+            'teacher_id' => 'required|exists:users,id',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ], [
             'password.regex' => 'Password must be at least 8 characters with uppercase, lowercase, and number.',
             'password.min' => 'Password must be at least 8 characters.'
         ]);
+
+        $teacher = User::where('id', $request->teacher_id)
+            ->where('role', 'teacher')
+            ->firstOrFail();
+
+        if ($teacher->department !== $request->department) {
+            return back()->withInput()->withErrors(['teacher_id' => 'Selected teacher must belong to the same department as the student.']);
+        }
 
         $imagePath = null;
         if ($request->hasFile('profile_image')) {
@@ -55,7 +78,7 @@ class RegistrarController extends Controller
 
         $listNo = User::generateListNo('student');
 
-        User::create([
+        $student = User::create([
             'list_no' => $listNo,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -67,7 +90,11 @@ class RegistrarController extends Controller
             'profile_image' => $imagePath,
         ]);
 
-        return redirect()->route('registrar.students')->with('success', 'Student registered successfully!');
+        $student->assignedTeacher()->attach($teacher->id, [
+            'assigned_by' => Auth::id(),
+        ]);
+
+        return redirect()->route('registrar.students')->with('success', 'Student registered successfully and assigned to the selected teacher!');
     }
 
     // View all students

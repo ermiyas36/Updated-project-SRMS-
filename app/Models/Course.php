@@ -17,6 +17,7 @@ class Course extends Model
         'course_name', 
         'department', 
         'sub_field',
+        'sub_field_id',
         'credits'
     ];
 
@@ -24,6 +25,12 @@ class Course extends Model
     public function grades()
     {
         return $this->hasMany(Grade::class);
+    }
+
+    // Relationship with SubField (normalized)
+    public function subField()
+    {
+        return $this->belongsTo(SubField::class);
     }
 
     // Relationship with Attendance

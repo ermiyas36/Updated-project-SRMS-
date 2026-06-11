@@ -23,7 +23,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'list_no', 'first_name', 'last_name', 'email', 'password',
-        'role', 'department', 'year', 'profile_image'
+        'role', 'department', 'department_id', 'year', 'profile_image'
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -56,6 +56,25 @@ class User extends Authenticatable
     public function assignedCourses()
     {
         return $this->belongsToMany(Course::class, 'teacher_courses', 'teacher_id', 'course_id');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function assignedStudents()
+    {
+        return $this->belongsToMany(User::class, 'student_teacher_assignments', 'teacher_id', 'student_id')
+            ->withPivot('assigned_by')
+            ->withTimestamps();
+    }
+
+    public function assignedTeacher()
+    {
+        return $this->belongsToMany(User::class, 'student_teacher_assignments', 'student_id', 'teacher_id')
+            ->withPivot('assigned_by')
+            ->withTimestamps();
     }
 
     public function isAdmin()

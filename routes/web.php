@@ -64,8 +64,8 @@ Route::prefix('student')->name('student.')->middleware(['auth'])->group(function
     Route::get('/attendance', [StudentController::class, 'viewAttendance'])->name('attendance');
 });
 
-// Registrar routes - WITH AUTH MIDDLEWARE
-Route::prefix('registrar')->name('registrar.')->middleware(['auth'])->group(function () {
+// Registrar routes - WITH AUTH + REGISTRAR PERMISSION
+Route::prefix('registrar')->name('registrar.')->middleware(['auth', 'registrar'])->group(function () {
     Route::get('/dashboard', [RegistrarController::class, 'dashboard'])->name('dashboard');
     Route::get('/register-student', [RegistrarController::class, 'registerStudent'])->name('register-student');
     Route::post('/students', [RegistrarController::class, 'storeStudent'])->name('students.store');

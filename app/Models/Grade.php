@@ -10,7 +10,7 @@ class Grade extends Model
     use HasFactory;
 
     protected $fillable = [
-        'student_id', 'course_id', 'grade', 'teacher_id', 'semester', 'academic_year', 'status'
+        'student_id', 'course_id', 'grade', 'teacher_id', 'semester', 'academic_year', 'academic_period_id', 'status'
     ];
 
     public function student()
@@ -26,5 +26,10 @@ class Grade extends Model
     public function teacher()
     {
         return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function academicPeriod()
+    {
+        return $this->belongsTo(AcademicPeriod::class);
     }
 }

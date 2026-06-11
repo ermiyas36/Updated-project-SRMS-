@@ -16,7 +16,17 @@ class DatabaseSeeder extends Seeder
         User::query()->delete();
         Course::query()->delete();
 
+        // Seed normalized data first
+        $this->command->info('Creating departments and sub-fields...');
+        $this->call(DepartmentSeeder::class);
+        $this->call(SubFieldSeeder::class);
+        $this->call(AcademicPeriodSeeder::class);
+
         $this->command->info('Creating users...');
+
+        // Get Computer Science department
+        $csDept = \App\Models\Department::where('name', 'Computer Science')->first();
+        $adminDept = \App\Models\Department::where('name', 'Other')->first();
 
         // Create Admin
         User::create([
@@ -27,6 +37,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('Admin123'),
             'role' => 'admin',
             'department' => 'Administration',
+            'department_id' => $adminDept->id ?? null,
         ]);
 
         // Create Teacher
@@ -38,6 +49,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('Teacher123'),
             'role' => 'teacher',
             'department' => 'Computer Science',
+            'department_id' => $csDept->id ?? null,
         ]);
 
         // Create Student
@@ -49,6 +61,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('Student123'),
             'role' => 'student',
             'department' => 'Computer Science',
+            'department_id' => $csDept->id ?? null,
             'year' => 2,
         ]);
 
@@ -61,6 +74,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('Registrar123'),
             'role' => 'registrar',
             'department' => 'Registrar Office',
+            'department_id' => $adminDept->id ?? null,
         ]);
 
         $this->command->info('Creating courses...');
@@ -69,7 +83,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CourseSeeder::class);
 
         $this->command->info('====================================');
-        $this->command->info(' Database seeded successfully!');
+        $this->command->info(' Database seeded successfully with 3NF normalization!');
         $this->command->info('====================================');
         $this->command->info('Demo Accounts:');
         $this->command->info('📧 Admin: admin@example.com / Admin123');

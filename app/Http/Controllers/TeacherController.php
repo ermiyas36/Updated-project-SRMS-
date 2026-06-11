@@ -14,10 +14,8 @@ class TeacherController extends Controller
     // Dashboard
     public function dashboard()
     {
-        $teacherDepartment = Auth::user()->department;
-        $totalStudents = User::where('role', 'student')
-            ->where('department', $teacherDepartment)
-            ->count();
+        $teacher = User::findOrFail(Auth::id());
+        $totalStudents = $teacher->assignedStudents()->count();
         $totalCourses = Course::count();
         $gradesGiven = Grade::where('teacher_id', Auth::id())->count();
         $submittedGrades = Grade::where('teacher_id', Auth::id())
@@ -29,13 +27,11 @@ class TeacherController extends Controller
 
     // ========== STUDENT MANAGEMENT ==========
     
-    // View all students
+    // View all students assigned to this teacher
     public function viewStudents()
     {
-        $teacherDepartment = Auth::user()->department;
-        $students = User::where('role', 'student')
-            ->where('department', $teacherDepartment)
-            ->get();
+        $teacher = User::findOrFail(Auth::id());
+        $students = $teacher->assignedStudents()->get();
         $searchMessage = null;
         $isSingleStudent = false;
         return view('teacher.students', compact('students', 'searchMessage', 'isSingleStudent'));
@@ -44,9 +40,10 @@ class TeacherController extends Controller
     // Search students
     public function searchStudents(Request $request)
     {
-        $teacherDepartment = Auth::user()->department;
         $query = User::where('role', 'student')
-            ->where('department', $teacherDepartment);
+            ->whereHas('assignedTeacher', function ($q) {
+                $q->where('teacher_id', Auth::id());
+            });
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -60,9 +57,6 @@ class TeacherController extends Controller
         if ($request->filled('year')) {
             $query->where('year', $request->year);
         }
-
-        // Note: Department filter is disabled for teachers since they only see their own department students
-        // The department filter in the form is for future extensibility if needed
 
         $students = $query->get();
 
@@ -94,10 +88,8 @@ class TeacherController extends Controller
     // Manage grades page
     public function manageGrades()
     {
-        $teacherDepartment = Auth::user()->department;
-        $students = User::where('role', 'student')
-            ->where('department', $teacherDepartment)
-            ->get();
+        $teacher = User::findOrFail(Auth::id());
+        $students = $teacher->assignedStudents()->get();
         $courses = Course::all();
         $grades = Grade::with(['student', 'course'])->where('teacher_id', Auth::id())->get();
         return view('teacher.grades', compact('students', 'courses', 'grades'));
@@ -113,6 +105,17 @@ class TeacherController extends Controller
             'semester' => 'required|integer|min:1|max:4',
             'academic_year' => 'required|integer'
         ]);
+
+        $studentAssigned = User::where('role', 'student')
+            ->whereHas('assignedTeacher', function ($q) {
+                $q->where('teacher_id', Auth::id());
+            })
+            ->where('id', $request->student_id)
+            ->exists();
+
+        if (! $studentAssigned) {
+            return redirect()->back()->with('error', 'You can only add grades for assigned students.');
+        }
 
         Grade::updateOrCreate(
             [
@@ -162,10 +165,8 @@ class TeacherController extends Controller
     // Manage attendance page
     public function manageAttendance()
     {
-        $teacherDepartment = Auth::user()->department;
-        $students = User::where('role', 'student')
-            ->where('department', $teacherDepartment)
-            ->get();
+        $teacher = User::findOrFail(Auth::id());
+        $students = $teacher->assignedStudents()->get();
         $courses = Course::all();
         $attendances = Attendance::with(['student', 'course'])
             ->where('teacher_id', Auth::id())
@@ -184,6 +185,17 @@ class TeacherController extends Controller
             'status' => 'required|in:present,absent,late,excused',
             'remarks' => 'nullable|string'
         ]);
+
+        $studentAssigned = User::where('role', 'student')
+            ->whereHas('assignedTeacher', function ($q) {
+                $q->where('teacher_id', Auth::id());
+            })
+            ->where('id', $request->student_id)
+            ->exists();
+
+        if (! $studentAssigned) {
+            return redirect()->back()->with('error', 'You can only manage attendance for assigned students.');
+        }
 
         Attendance::updateOrCreate(
             [
