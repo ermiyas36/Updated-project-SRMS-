@@ -11,11 +11,11 @@
                 <form action="{{ route('teacher.add-grade') }}" method="POST">
                     @csrf
                     <div class="mb-3">
-                        <label>Student (List No - Name)</label>
+                        <label>Student (List No - First Name Last Name)</label>
                         <select name="student_id" class="form-control" required>
                             <option value="">Select Student</option>
                             @foreach($students as $student)
-                                <option value="{{ $student->id }}">{{ $student->list_no }} - {{ $student->full_name }}</option>
+                                <option value="{{ $student->id }}">{{ $student->list_no }} - {{ $student->first_name }} {{ $student->last_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -92,7 +92,7 @@
                                     @endif
                                 </td>
                                 <td>{{ $grade->student->list_no }}</td>
-                                <td>{{ $grade->student->full_name }}</td>
+                                <td>{{ $grade->student->first_name }} {{ $grade->student->last_name }}</td>
                                 <td>{{ $grade->course->course_name }}</td>
                                 <td>{{ $grade->grade }}</td>
                                 <td>

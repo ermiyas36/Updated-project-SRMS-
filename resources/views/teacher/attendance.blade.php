@@ -15,7 +15,7 @@
                         <select name="student_id" class="form-control" required>
                             <option value="">Select Student</option>
                             @foreach($students as $student)
-                                <option value="{{ $student->id }}">{{ $student->list_no }} - {{ $student->full_name }}</option>
+                                <option value="{{ $student->id }}">{{ $student->list_no }} - {{ $student->first_name }} {{ $student->last_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -71,7 +71,7 @@
                             @forelse($attendances as $attendance)
                             <tr>
                                 <td>{{ $attendance->date->format('M d, Y') }}</td>
-                                <td>{{ $attendance->student->full_name }}</td>
+                                <td>{{ $attendance->student->first_name }} {{ $attendance->student->last_name }}</td>
                                 <td>{{ $attendance->course->course_name }}</td>
                                 <td>
                                     <span class="badge bg-{{ $attendance->status == 'present' ? 'success' : ($attendance->status == 'late' ? 'warning' : 'danger') }}">

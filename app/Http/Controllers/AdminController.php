@@ -25,10 +25,109 @@ class AdminController extends Controller
     // ========== STUDENT MANAGEMENT ==========
     
     // List all students
-    public function students()
+    public function students(Request $request)
     {
-        $students = User::where('role', 'student')->latest()->paginate(10);
-        return view('admin.students.index', compact('students'));
+        $department = $request->query('department');
+        $selectedFreshmanCategory = $request->query('freshman_group', 'Natural');
+        $group = $request->query('group');
+
+        $freshmanCategories = [
+            'Natural' => ['Natural Science', 'Biology', 'Chemistry', 'Physics', 'Environmental Science'],
+            'Social' => ['Social Science', 'Psychology', 'Sociology', 'Political Science', 'Economics'],
+        ];
+
+        $collegeGroups = [
+            'Health Academic' => ['Health Academic', 'Nursing', 'Medicine', 'Public Health'],
+            'Engineering' => ['Software Engineering', 'Computer Science', 'Information Technology', 'Information Systems', 'Electrical Engineering', 'Mechanical Engineering', 'Civil Engineering'],
+            'Social Science' => ['Social Science', 'Psychology', 'Sociology', 'Political Science', 'Economics'],
+            'Natural Science' => ['Natural Science', 'Biology', 'Chemistry', 'Physics', 'Environmental Science'],
+            'Business & Management' => ['Business', 'Accounting', 'Finance', 'Marketing', 'Management'],
+            'Arts & Humanities' => ['Literature', 'History', 'Philosophy', 'Fine Arts', 'Languages'],
+            'Mathematics & Statistics' => ['Mathematics', 'Statistics', 'Applied Mathematics'],
+            'Other' => ['Law', 'Education', 'Agriculture', 'Other'],
+        ];
+
+        $selectedCollege = $department ? $this->resolveCollegeGroup($department, $collegeGroups) : null;
+
+        $allFreshmanDepartments = collect($freshmanCategories)->flatten()->unique()->all();
+
+        $query = User::where('role', 'student')->latest();
+
+        if ($group === 'freshman') {
+            $query->where('year', 1)
+                ->whereIn('department', $freshmanCategories[$selectedFreshmanCategory] ?? $allFreshmanDepartments);
+        } elseif ($group === 'remedial') {
+            $query->where('department', 'Remedial');
+        } elseif ($department) {
+            if ($department === 'Freshman') {
+                $query->where('year', 1)
+                    ->whereIn('department', $freshmanCategories[$selectedFreshmanCategory] ?? $allFreshmanDepartments);
+            } elseif ($department === 'Remedial') {
+                $query->where('department', 'Remedial');
+            } elseif (array_key_exists($department, $collegeGroups)) {
+                $query->whereIn('department', $collegeGroups[$department]);
+            } else {
+                $query->where('department', $department);
+            }
+        }
+
+        $students = $query->paginate(10)->appends(['department' => $department, 'group' => $group, 'freshman_group' => $selectedFreshmanCategory]);
+
+        $departments = User::where('role', 'student')
+            ->whereNotNull('department')
+            ->where('department', '!=', '')
+            ->select('department')
+            ->distinct()
+            ->orderBy('department')
+            ->pluck('department')
+            ->filter(function ($name) {
+                return !in_array($name, ['Freshman', 'Remedial'], true);
+            });
+
+        $departmentCounts = $departments->mapWithKeys(function ($name) {
+            return [$name => User::where('role', 'student')->where('department', $name)->count()];
+        });
+
+        $freshmanCount = User::where('role', 'student')
+            ->where('year', 1)
+            ->whereIn('department', $allFreshmanDepartments)
+            ->count();
+
+        $remedialCount = User::where('role', 'student')
+            ->where('department', 'Remedial')
+            ->count();
+
+        $collegeCounts = collect($collegeGroups)->mapWithKeys(function ($departmentsInCollege, $college) use ($departmentCounts) {
+            return [$college => collect($departmentsInCollege)->sum(fn($dept) => $departmentCounts[$dept] ?? 0)];
+        });
+
+        $selectedCollegeDepartments = $selectedCollege ? ($collegeGroups[$selectedCollege] ?? []) : [];
+
+        return view('admin.students.index', compact(
+            'students',
+            'departments',
+            'department',
+            'departmentCounts',
+            'collegeGroups',
+            'selectedCollege',
+            'collegeCounts',
+            'selectedCollegeDepartments',
+            'freshmanCategories',
+            'selectedFreshmanCategory',
+            'freshmanCount',
+            'remedialCount'
+        ));
+    }
+
+    private function resolveCollegeGroup(string $department, array $collegeGroups): ?string
+    {
+        foreach ($collegeGroups as $college => $departments) {
+            if (in_array($department, $departments, true)) {
+                return $college;
+            }
+        }
+
+        return null;
     }
 
     // Show create student form

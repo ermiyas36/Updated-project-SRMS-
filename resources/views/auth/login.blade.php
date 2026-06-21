@@ -32,6 +32,18 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
+        .app-title {
+            color: #1d4ed8;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 8px rgba(29, 78, 216, 0.15);
+            transition: transform 0.25s ease, color 0.25s ease, text-shadow 0.25s ease;
+        }
+        .app-title:hover {
+            color: #2563eb;
+            transform: translateY(-1px) scale(1.02);
+            text-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+        }
         .text-muted {
             color: #6c757d !important;
         }
@@ -45,7 +57,7 @@
                     <div class="card-body p-5">
                         <div class="text-center mb-4">
                             <i class="fas fa-graduation-cap fa-4x text-primary"></i>
-                            <h3 class="mt-2">Student Record System</h3>
+                            <h3 class="mt-2 app-title">Student Record System</h3>
                             <p class="text-muted">Please login to your account</p>
                         </div>
                         
@@ -74,15 +86,7 @@
                                 <i class="fas fa-sign-in-alt me-2"></i> Login
                             </button>
                         </form>
-                        
-                        <hr class="my-4">
-                        <div class="text-center">
-                            <small class="text-muted">Demo Accounts:</small><br>
-                            <small><i class="fas fa-user-shield"></i> admin@example.com / Admin123</small><br>
-                            <small><i class="fas fa-chalkboard-user"></i> teacher@example.com / Teacher123</small><br>
-                            <small><i class="fas fa-user-graduate"></i> student@example.com / Student123</small><br>
-                            <small><i class="fas fa-building"></i> registrar@example.com / Registrar123</small>
-                        </div>
+
                     </div>
                 </div>
             </div>

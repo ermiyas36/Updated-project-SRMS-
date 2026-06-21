@@ -31,10 +31,15 @@ class StudentController extends Controller
         $user = Auth::user();
         $grades = Grade::where('student_id', Auth::id())->with('course')->get();
         $attendance = Attendance::where('student_id', Auth::id())->get();
-        
+
+        $numericGrades = $grades->filter(fn ($grade) => is_numeric($grade->grade));
+        $averageGrade = $numericGrades->isNotEmpty()
+            ? round($numericGrades->avg(fn ($grade) => (float) $grade->grade), 2)
+            : 'N/A';
+
         $stats = [
             'total_courses' => $grades->count(),
-            'average_grade' => $grades->avg('grade') ?? 'N/A',
+            'average_grade' => $averageGrade,
             'attendance_rate' => $attendance->count() > 0 ? round(($attendance->where('status', 'present')->count() / $attendance->count()) * 100) . '%' : 'N/A',
         ];
         
@@ -73,7 +78,14 @@ class StudentController extends Controller
     public function viewGrades()
     {
         $user = Auth::user();
-        $grades = Grade::where('student_id', Auth::id())->with('course')->get();
+
+        $grades = Grade::where('student_id', Auth::id())
+            ->with('course')
+            ->orderBy('academic_year', 'desc')
+            ->orderBy('semester')
+            ->get()
+            ->groupBy('semester');
+
         return view('student.grades', compact('grades'));
     }
     

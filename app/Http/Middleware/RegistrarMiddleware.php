@@ -14,7 +14,9 @@ class RegistrarMiddleware
             return redirect()->route('login');
         }
         
-        if (Auth::user()->role !== 'registrar') {
+        $allowedRoles = ['registrar', 'admin'];
+
+        if (!in_array(Auth::user()->role, $allowedRoles, true)) {
             abort(403, 'Unauthorized access. Registrar only area.');
         }
         
